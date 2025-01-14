@@ -66,6 +66,7 @@ export interface Client {
   retainer_amount: number | null
   retainer_hours: number | null
   overage_hourly_rate: number | null
+  project_enabled: boolean
 }
 
 // Add validation rules

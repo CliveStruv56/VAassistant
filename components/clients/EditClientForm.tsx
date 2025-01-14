@@ -35,6 +35,7 @@ interface FormData {
   retainer_hours: number | null
   overage_hourly_rate: number | null
   payment_terms: string
+  project_enabled: boolean
 }
 
 export function EditClientForm({ clientId, onSuccess, onCancel }: EditClientFormProps) {
@@ -62,7 +63,8 @@ export function EditClientForm({ clientId, onSuccess, onCancel }: EditClientForm
     retainer_amount: null,
     retainer_hours: null,
     overage_hourly_rate: null,
-    payment_terms: 'net_30'
+    payment_terms: 'net_30',
+    project_enabled: false
   })
 
   const [showContactForm, setShowContactForm] = useState(false)
@@ -542,6 +544,39 @@ export function EditClientForm({ clientId, onSuccess, onCancel }: EditClientForm
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Project Management */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-semibold text-orange border-l-4 border-orange pl-3">
+          Project Management
+        </h3>
+        
+        <div className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            id="project_enabled"
+            checked={formData.project_enabled}
+            onChange={e => setFormData({ ...formData, project_enabled: e.target.checked })}
+            className="h-4 w-4 text-mint border-mint-light focus:ring-mint"
+          />
+          <label htmlFor="project_enabled" className="text-text-header font-medium">
+            Enable Project Management
+          </label>
+        </div>
+        
+        {formData.project_enabled && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  Warning: Disabling project management will not delete existing projects,
+                  but they will be hidden until project management is re-enabled.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Form Buttons */}

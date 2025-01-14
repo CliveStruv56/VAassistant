@@ -11,6 +11,7 @@ const navItems = [
   { href: '/time-tracker', label: 'Time Tracker' },
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/clients', label: 'Clients' },
+  { href: '/projects', label: 'Projects' },
   { href: '/dashboard/tasks', label: 'Tasks' },
   { href: '/training', label: 'Training' },
   { href: '/prospecting', label: 'Prospecting' }

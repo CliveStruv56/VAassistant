@@ -18,6 +18,11 @@ interface Task {
   client_id: string
   estimated_hours: number | null
   estimated_minutes: number | null
+  project_id?: string
+  project?: {
+    name: string
+    status: string
+  }
 }
 
 type TaskStatus = 'pending' | 'in_progress' | 'completed'
@@ -58,7 +63,8 @@ export function TaskList() {
     status: 'all',
     priority: 'all',
     client: 'all',
-    search: ''
+    search: '',
+    project: 'all'
   })
   const [selectedTaskId, setSelectedTaskId] = React.useState<string | null>(null)
 
@@ -68,7 +74,13 @@ export function TaskList() {
       
       const { data, error } = await supabase
         .from('tasks')
-        .select('*')
+        .select(`
+          *,
+          project:projects (
+            name,
+            status
+          )
+        `)
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false })
 
@@ -220,6 +232,7 @@ export function TaskList() {
       
       return task.status !== 'completed' && today > dueDate
     }
+    if (filter.project !== 'all' && task.project_id !== filter.project) return false
     return true
   })
 
@@ -261,6 +274,21 @@ export function TaskList() {
             <option value="low">Low</option>
             <option value="medium">Medium</option>
             <option value="high">High</option>
+          </select>
+
+          <select
+            value={filter.project}
+            onChange={(e) => setFilter(f => ({ ...f, project: e.target.value }))}
+            className="rounded-md border border-gray-300 px-3 py-2"
+          >
+            <option value="all">All Projects</option>
+            {Array.from(new Set(tasks.map(t => t.project?.name))).map(projectName => (
+              projectName && (
+                <option key={projectName} value={projectName}>
+                  {projectName}
+                </option>
+              )
+            ))}
           </select>
 
           <input
@@ -329,6 +357,12 @@ export function TaskList() {
           <div className="mt-4 text-sm text-gray-500">
             <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
           </div>
+
+          {task.project && (
+            <span className="text-sm text-gray-500">
+              Project: {task.project.name}
+            </span>
+          )}
         </div>
       ))}
 

@@ -13,6 +13,7 @@ export interface TimeEntry {
   tasks?: {
     title: string
   }
+  project_id?: string
 }
 
 export interface TimeStats {
@@ -42,4 +43,17 @@ export interface RunningTimer {
   client_id: string
   task_id?: string
   description: string
+}
+
+export interface Task {
+  id: string
+  title: string
+  description: string
+  status: string
+  priority: string
+  due_date: string
+  created_at: string
+  user_id: string
+  client_id: string
+  project_id?: string
 } 

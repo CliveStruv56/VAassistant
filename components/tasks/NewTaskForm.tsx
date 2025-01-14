@@ -10,6 +10,7 @@ interface NewTaskFormProps {
   initialClientId?: string
   taskId?: string
   isEditing?: boolean
+  initialProjectId?: string
 }
 
 interface ClientDropdown {
@@ -18,8 +19,10 @@ interface ClientDropdown {
   company: string
 }
 
-export function NewTaskForm({ onSuccess, initialClientId, taskId, isEditing }: NewTaskFormProps) {
+export function NewTaskForm({ onSuccess, initialClientId, taskId, isEditing, initialProjectId }: NewTaskFormProps) {
   const [clients, setClients] = useState<ClientDropdown[]>([])
+  const [projects, setProjects] = useState<any[]>([])
+  const [selectedClient, setSelectedClient] = useState(initialClientId || '')
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -31,8 +34,9 @@ export function NewTaskForm({ onSuccess, initialClientId, taskId, isEditing }: N
     due_date: '',
     estimated_hours: 0,
     estimated_minutes: 0,
-    category: ''
+    project_id: initialProjectId || '',
   })
+  const [clientDetails, setClientDetails] = useState<Client | null>(null)
 
   // Fetch existing task data if editing
   useEffect(() => {
@@ -83,6 +87,70 @@ export function NewTaskForm({ onSuccess, initialClientId, taskId, isEditing }: N
     fetchClients()
   }, [])
 
+  // Add this effect to load projects when client is selected
+  useEffect(() => {
+    async function loadProjects() {
+      if (!selectedClient) {
+        setProjects([])
+        return
+      }
+
+      try {
+        const { data } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('client_id', selectedClient)
+          .eq('status', 'active')
+          .order('name')
+
+        setProjects(data || [])
+      } catch (error) {
+        console.error('Error loading projects:', error)
+        toast.error('Failed to load projects')
+      }
+    }
+
+    loadProjects()
+  }, [selectedClient])
+
+  const handleClientSelect = async (clientId: string) => {
+    setFormData(prev => ({ ...prev, client_id: clientId }))
+    setSelectedClient(clientId)
+    
+    if (clientId) {
+      try {
+        // Fetch client details to check if projects are enabled
+        const { data: client, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('id', clientId)
+          .single()
+        
+        if (error) throw error
+        setClientDetails(client)
+        
+        // If client has projects enabled, fetch their projects
+        if (client.project_enabled) {
+          const { data: projects, error: projectsError } = await supabase
+            .from('projects')
+            .select('*')
+            .eq('client_id', clientId)
+            .eq('status', 'active')
+            .order('name')
+          
+          if (projectsError) throw projectsError
+          setProjects(projects || [])
+        }
+      } catch (error) {
+        console.error('Error fetching client details:', error)
+        toast.error('Failed to load client details')
+      }
+    } else {
+      setClientDetails(null)
+      setProjects([])
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -110,9 +178,19 @@ export function NewTaskForm({ onSuccess, initialClientId, taskId, isEditing }: N
       } else {
         // Create new task
         const { error } = await supabase.from('tasks').insert([{
-          ...formData,
+          title: formData.title,
+          description: formData.description,
+          status: formData.status,
+          priority: formData.priority,
+          due_date: formData.due_date || null,
+          client_id: formData.client_id,
+          project_id: formData.project_id,
+          estimated_hours: Number(formData.estimated_hours) || 0,
+          estimated_minutes: Number(formData.estimated_minutes) || 0,
+          total_time: 0,
           user_id: user.id,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString().replace('T', ' ').replace('Z', ''),
+          notes: '[]'
         }])
 
         if (error) throw error
@@ -134,7 +212,7 @@ export function NewTaskForm({ onSuccess, initialClientId, taskId, isEditing }: N
         </label>
         <select
           value={formData.client_id}
-          onChange={e => setFormData({ ...formData, client_id: e.target.value })}
+          onChange={(e) => handleClientSelect(e.target.value)}
           className="mt-1 w-full p-2 border rounded-md"
           required
         >
@@ -146,6 +224,32 @@ export function NewTaskForm({ onSuccess, initialClientId, taskId, isEditing }: N
           ))}
         </select>
       </div>
+
+      {clientDetails?.project_enabled && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Project {clientDetails.project_enabled && '*'}
+          </label>
+          <select
+            value={formData.project_id}
+            onChange={e => setFormData({ ...formData, project_id: e.target.value })}
+            className="mt-1 w-full p-2 border rounded-md"
+            required={clientDetails.project_enabled}
+          >
+            <option value="">Select a project</option>
+            {projects.map(project => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+          {clientDetails.project_enabled && projects.length === 0 && (
+            <p className="mt-1 text-sm text-orange">
+              No active projects found. Please create a project first.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Basic Information */}
       <div className="space-y-4">
@@ -237,29 +341,40 @@ export function NewTaskForm({ onSuccess, initialClientId, taskId, isEditing }: N
           <input
             type="number"
             min="0"
-            step="0.5"
-            value={formData.estimated_hours}
-            onChange={e => setFormData({ ...formData, estimated_hours: parseFloat(e.target.value) })}
+            step="1"
+            value={Number(formData.estimated_hours) || 0}
+            onChange={e => {
+              const value = e.target.value.replace(/^0+/, '')
+              setFormData({ 
+                ...formData, 
+                estimated_hours: parseInt(value) || 0 
+              })
+            }}
             className="mt-1 w-full p-3 rounded-md border-2 border-mint-light 
                      focus:border-mint focus:ring-2 focus:ring-mint/30
                      bg-gray-50 text-text-header"
           />
         </div>
-      </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Category
-        </label>
-        <input
-          type="text"
-          value={formData.category}
-          onChange={e => setFormData({ ...formData, category: e.target.value })}
-          className="mt-1 w-full p-3 rounded-md border-2 border-mint-light 
-                   focus:border-mint focus:ring-2 focus:ring-mint/30
-                   bg-gray-50 text-text-header"
-          placeholder="Enter task category"
-        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Estimated Minutes
+          </label>
+          <input
+            type="number"
+            min="0"
+            max="59"
+            step="1"
+            value={formData.estimated_minutes || 0}
+            onChange={e => setFormData({ 
+              ...formData, 
+              estimated_minutes: parseInt(e.target.value) || 0 
+            })}
+            className="mt-1 w-full p-3 rounded-md border-2 border-mint-light 
+                     focus:border-mint focus:ring-2 focus:ring-mint/30
+                     bg-gray-50 text-text-header"
+          />
+        </div>
       </div>
 
       <div className="pt-4">

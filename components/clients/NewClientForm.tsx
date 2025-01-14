@@ -30,6 +30,7 @@ interface ClientFormData {
   retainer_hours: number | null
   overage_hourly_rate: number | null
   payment_terms: string
+  project_enabled: boolean
 }
 
 interface NewClientFormProps {
@@ -61,7 +62,8 @@ export function NewClientForm({ onSuccess }: NewClientFormProps) {
     retainer_amount: null,
     retainer_hours: null,
     overage_hourly_rate: null,
-    payment_terms: 'net_30'
+    payment_terms: 'net_30',
+    project_enabled: false
   })
 
   const [newContact, setNewContact] = useState<Partial<KeyContact>>({
@@ -216,6 +218,31 @@ export function NewClientForm({ onSuccess }: NewClientFormProps) {
             </select>
           </div>
         </div>
+      </div>
+
+      {/* Project Management */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-semibold text-orange border-l-4 border-orange pl-3">
+          Project Management
+        </h3>
+        
+        <div className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            id="project_enabled"
+            checked={formData.project_enabled}
+            onChange={e => setFormData({ ...formData, project_enabled: e.target.checked })}
+            className="h-4 w-4 text-mint border-mint-light focus:ring-mint"
+          />
+          <label htmlFor="project_enabled" className="text-text-header font-medium">
+            Enable Project Management
+          </label>
+        </div>
+        
+        <p className="text-sm text-gray-600">
+          When enabled, tasks for this client must be organized within projects.
+          This setting can be changed later.
+        </p>
       </div>
 
       {/* Contact Information */}
