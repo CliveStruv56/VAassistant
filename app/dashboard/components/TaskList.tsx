@@ -53,6 +53,14 @@ function getNextPriority(currentPriority: string): string {
   }
 }
 
+function isOverdue(dueDate: string): boolean {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const taskDueDate = new Date(dueDate)
+  taskDueDate.setHours(0, 0, 0, 0)
+  return taskDueDate < today && today.getTime() !== taskDueDate.getTime()
+}
+
 export function TaskList() {
   const [tasks, setTasks] = React.useState<Task[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -332,6 +340,12 @@ export function TaskList() {
               >
                 {task.status.replace('_', ' ')}
               </button>
+
+              {task.due_date && isOverdue(task.due_date) && task.status !== 'completed' && (
+                <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800">
+                  Overdue
+                </span>
+              )}
             </div>
             
             <div className="flex items-center space-x-2">

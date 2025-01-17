@@ -406,20 +406,25 @@ export default function TimeTrackerPage() {
 
               {/* Notes List */}
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                {selectedTaskDetails.notes?.map((note, index) => {
-                  const [timestamp, ...noteParts] = note.split(': ')
-                  const noteText = noteParts.join(': ')
-                  const date = new Date(timestamp)
-                  
-                  return (
-                    <div key={index} className="text-sm border-l-2 border-mint pl-3">
-                      <p className="text-gray-600">{noteText}</p>
-                      <p className="text-xs text-gray-400">
-                        {date.toLocaleDateString()} {date.toLocaleTimeString()}
-                      </p>
-                    </div>
-                  )
-                }).reverse()}
+                {selectedTaskDetails?.notes && Array.isArray(selectedTaskDetails.notes) ? (
+                  selectedTaskDetails.notes.map((note, index) => {
+                    const [timestamp, ...noteParts] = note.split(': ')
+                    const noteText = noteParts.join(': ')
+                    const date = new Date(timestamp)
+                    
+                    return (
+                      <div key={index} className="p-2 bg-gray-50 rounded-md text-sm border border-gray-100">
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>{date.toLocaleDateString()}</span>
+                          <span>{date.toLocaleTimeString()}</span>
+                        </div>
+                        <p className="mt-1">{noteText}</p>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <p className="text-sm text-gray-500">No notes available</p>
+                )}
               </div>
             </div>
           </div>
